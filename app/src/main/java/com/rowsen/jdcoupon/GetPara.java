@@ -8,18 +8,22 @@ public class GetPara implements Serializable {
     int num;
     long dif_time;
     int time;
-    String body;
+    String body_manual;
+    String body_40;
+    String body_2;
 
     GetPara() {
 
     }
 
-    GetPara(int time, int interval, int num, long dif_time, String body) {
+    GetPara(int time, int interval, int num, long dif_time, String body_manual,String body_40,String body_2) {
         this.time = time;
         this.interval = interval;
         this.num = num;
         this.dif_time = dif_time;
-        this.body = body;
+        this.body_manual = body_manual;
+        this.body_40 = body_40;
+        this.body_2 = body_2;
         /*calendar = Calendar.getInstance();
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
@@ -44,7 +48,6 @@ public class GetPara implements Serializable {
 
     @Override
     public String toString() {
-        String s = "time:" + time + "," + "interval:" + interval + "," + "num:" + num + "," + "dif_time:" + dif_time;
-        return s;
+        return "time:" + time + "," + "interval:" + interval + "," + "num:" + num + "," + "dif_time:" + dif_time;
     }
 }

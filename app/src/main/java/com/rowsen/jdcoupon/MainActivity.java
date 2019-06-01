@@ -16,8 +16,17 @@ import android.webkit.CookieSyncManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.RadioGroup;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.io.IOException;
 
 import es.dmoral.toasty.Toasty;
 
@@ -46,8 +55,16 @@ public class MainActivity extends AppCompatActivity {
     //90-2地址：
     //https://api.m.jd.com/client.action?functionId=newBabelAwardCollection
     //request body:
-    String body = "{\"activityId\":\"3J6CSU6S6was4gqMYahCDA5SgTy\",\"from\":\"H5node\",\"scene\":\"1\",\"args\":\"key=D2812FF5595C93DEB07100B738649BD6A2F18F9AF4114E8F1E94BAD002A6E0D77AD8F35A7BAA041CD9C8942D17F97B24_babel,roleId=E7977DF45D147D178446B5686CD18744_babel\",\"platform\":\"3\",\"orgType\":\"2\",\"openId\":\"-1\",\"pageClickKey\":\"Babel_Coupon\",\"eid\":\"S65ETJ6BMMLH5P4CNVA4SDDBH5MAR53LCDPC2BVOOPZ7W2TMZ3EQ5OQZPZM7SD3SSQTVUEOZZTWZ47TCPKLLM3ZYDU\",\"fp\":\"ad693cbf9064b6fda865c1a817965657\",\"shshshfp\":\"923c5560c26f39d3a0afd4c56bcf88b6\",\"shshshfpa\":\"359743c3-1bd8-22a5-12af-2a7dfa5f9c9c-1533910101\",\"shshshfpb\":\"1232a27d447a44cc8a08c07566034d9013b36a680fe2d69c15b6d9c195\",\"childActivityUrl\":\"https%3A%2F%2Fpro.m.jd.com%2Fmall%2Factive%2F3J6CSU6S6was4gqMYahCDA5SgTy%2Findex.html%3Futm_source%3Dandroidapp%26ShareTm%3DCi1SmD4KOATAU%252BH%252BnHiSOOpFFMZcEs5SoLKsuiXoiCRn49JcbQ%252FkAOAHzQyuhygUyFvkn9ssu0F%252F1FVyQIqqQY1YksgmYyTcy1%252B12hZ5yn4VsscZPGBQ2XC7dlgzbaXCyX%252Bhxopr3U5EH1MvxpeU6bGdF3oMKuCbM599qS4yEb0%253D%26ad_od%3Dshare%26utm_medium%3Dappshare%26utm_campaign%3Dt_335139774%26utm_term%3DWxfriends%26from%3Dsinglemessage\",\"mitemAddrId\":\"\",\"geo\":{\"lng\":\"\",\"lat\":\"\"},\"addressId\":\"\",\"posLng\":\"\",\"posLat\":\"\",\"focus\":\"\",\"innerAnchor\":\"\"}";
+    //String body = "{\"activityId\":\"3C3ssKKfw7uQ7QQKF5AY6NoLysxF\",\"from\":\"H5node\",\"scene\":\"1\",\"args\":\"key=4775DEFAD35ABF68977F9D7D3784087495A9F8A0F085094462B439A61DF47DBCB0079FF9130C91D8D889A57221EE53F4_babel,roleId=6589C013794ABF250ADDA86DAFA59815_babel\",\"platform\":\"3\",\"orgType\":\"2\",\"openId\":\"-1\",\"pageClickKey\":\"Babel_Coupon\",\"eid\":\"MO6NI3IES26IIAJDLJ7OBOY2QYXFPMZOUOPOXR5DHAH3PQ37J4LTBMVBNC3UEK657UGDU5NWJCVWUDVHDX5PJZ2PL4\",\"fp\":\"4690768afabdd6396110379b6159ce37\",\"shshshfp\":\"c5a47a1e8855b5f8c5a9016c9cbe0208\",\"shshshfpa\":\"0fb34f83-cfce-4ae0-5979-f43050ce816e-1532822110\",\"shshshfpb\":\"19a11e131aac3429caf4a9b8cbf50aa19a826bb3714d6794e5b1349b89\",\"childActivityUrl\":\"https%3A%2F%2Fpro.m.jd.com%2Fmall%2Factive%2F3C3ssKKfw7uQ7QQKF5AY6NoLysxF%2Findex.html\",\"mitemAddrId\":\"\",\"geo\":{\"lng\":\"\",\"lat\":\"\"},\"addressId\":\"\",\"posLng\":\"\",\"posLat\":\"\",\"focus\":\"\",\"innerAnchor\":\"\"}";
 
+    LinearLayout get_url;
+    Button auto;
+    Button manual;
+    CheckBox coupon_40;
+    CheckBox coupon_2;
+    String body_40;
+    String body_2;
+    String body_manual;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -128,6 +145,32 @@ public class MainActivity extends AppCompatActivity {
                             Toasty.error(MainActivity.this, "用户" + msg.arg1 + "：" + s).show();
                         //Toast.makeText(MainActivity.this, msg.obj + "", Toast.LENGTH_SHORT).show();
                         break;
+                    case 5://获取到90-40券时
+                        coupon_40 = new CheckBox(MainActivity.this);
+                        String[] temp = (msg.obj+"").split("\\|");
+                        coupon_40.setText(temp[0]);
+                        auto.setVisibility(View.GONE);
+                        manual.setVisibility(View.GONE);
+                        get_url.addView(coupon_40);
+                        body_40 = temp[1];
+                        break;
+                    case 6://获取到90-2券时
+                        coupon_2 = new CheckBox(MainActivity.this);
+                        coupon_2.setText((msg.obj+"").split("\\|")[0]);
+                        auto.setVisibility(View.GONE);
+                        manual.setVisibility(View.GONE);
+                        get_url.addView(coupon_2);
+                        body_2 = (msg.obj+"").split("\\|")[1];
+                        break;
+                    case 7://获取服务器coupon异常时
+                        auto.setVisibility(View.VISIBLE);
+                        auto.setEnabled(true);
+                        manual.setVisibility(View.VISIBLE);
+                        manual.setEnabled(true);
+                        break;
+                    case 8://自动获取时没有勾选任何优惠券
+                        Toasty.error(MainActivity.this, "请至少勾选一张优惠券!").show();
+                        break;
                 }
             }
         };
@@ -180,6 +223,47 @@ public class MainActivity extends AppCompatActivity {
         final RadioGroup num = v.findViewById(R.id.group_num);
         final EditText dif_time = v.findViewById(R.id.dif_time);
         final EditText url = v.findViewById(R.id.url);
+        get_url = v.findViewById(R.id.get_url);
+        auto = v.findViewById(R.id.auto);
+        manual = v.findViewById(R.id.manual);
+        auto.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                auto.setEnabled(false);
+                manual.setEnabled(false);
+                new Thread(){
+                    @Override
+                    public void run() {
+                        super.run();
+                        Document doc;
+                        try {
+                            doc = Jsoup.connect("http://freenat.club:50968").get();
+                            Elements div_40 = doc.getElementsByClass("90-40");
+                            if(div_40.size()>0){
+                                Message msg_40 = Message.obtain();
+                                msg_40.what = 5;
+                                msg_40.obj = div_40.get(0).text();
+                               // Log.e("90-40", msg_40.obj+"");
+                                handler.sendMessage(msg_40);
+                            }
+                            Elements div_2 = doc.getElementsByClass("90-2");
+                            if(div_2.size()>0){
+                                Message msg_2 = Message.obtain();
+                                msg_2.what = 6;
+                                msg_2.obj = div_2.get(0).text();
+                               // Log.e("90-2", msg_2.obj+"");
+                                handler.sendMessage(msg_2);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            handler.sendEmptyMessage(7);
+                        }
+
+
+                    }
+                }.start();
+            }
+        });
         builder.setView(v);
         builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
             @Override
@@ -191,8 +275,6 @@ public class MainActivity extends AppCompatActivity {
                 String dif = dif_time.getText().toString().trim();
                 if (!TextUtils.isEmpty(dif))
                     para_dif = Long.parseLong(dif);
-                if (!TextUtils.isEmpty(url.getText().toString().trim()))
-                    body = url.getText().toString().trim();
                 switch (time.getCheckedRadioButtonId()) {
                     case R.id.time_10:
                         para_time = 10;
@@ -235,7 +317,19 @@ public class MainActivity extends AppCompatActivity {
                         para_num = 3;
                         break;
                 }
-                para = new GetPara(para_time, para_interval, para_num, para_dif, body);
+                if (!TextUtils.isEmpty(url.getText().toString().trim())){
+                    body_manual = url.getText().toString().trim();
+                    para = new GetPara(para_time, para_interval, para_num, para_dif, body_manual,null,null);
+                }
+                else if(coupon_40.isChecked()&&!TextUtils.isEmpty(body_40)&&!coupon_2.isChecked())
+                    para = new GetPara(para_time, para_interval, para_num, para_dif, null,body_40,null);
+                else if(coupon_40.isChecked()&&!TextUtils.isEmpty(body_40)&&coupon_2.isChecked()&&!TextUtils.isEmpty(body_2))
+                    para = new GetPara(para_time, para_interval, para_num, para_dif, null,body_40,body_2);
+                else if(coupon_2.isChecked()&&!TextUtils.isEmpty(body_2)&&!coupon_40.isChecked())
+                    para = new GetPara(para_time, para_interval, para_num, para_dif, null,null,body_2);
+                else if(!coupon_2.isChecked()&&!coupon_40.isChecked())
+                    handler.sendEmptyMessage(8);
+
                 Intent intent = new Intent(MainActivity.this, GetCouponService.class);
                 intent.putExtra("para", para);
                 intent.putExtra("cookie_159", cookie_159);

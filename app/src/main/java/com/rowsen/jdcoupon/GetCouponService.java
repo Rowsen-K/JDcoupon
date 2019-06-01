@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.support.annotation.RequiresApi;
+import android.text.TextUtils;
 import android.util.Log;
 
 import org.jsoup.Connection;
@@ -18,6 +19,7 @@ import org.jsoup.Jsoup;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.Random;
 
 import es.dmoral.toasty.Toasty;
 
@@ -29,7 +31,7 @@ public class GetCouponService extends Service {
     NotificationChannel channel;
     Notification note;
     Bitmap icon;
-
+    Random radom;
     public GetCouponService() {
     }
 
@@ -55,6 +57,7 @@ public class GetCouponService extends Service {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        radom = new Random();
         Log.e("service", "开启");
     }
 
@@ -67,11 +70,31 @@ public class GetCouponService extends Service {
         String cookie_134 = intent.getStringExtra("cookie_134");
         /*Log.e("para", para.toString());
         Log.e("cookie_159", cookie_159);
-        Log.e("cookie_134", cookie_134);
-        Log.e("cookie_135", cookie_135);*/
-        getCoupon(cookie_134, 134, para,para.num);
-        getCoupon(cookie_135, 135, para,para.num);
-        getCoupon(cookie_159, 159, para,para.num);
+        Log.e("cookie_134", cookie_134);*/
+       // Log.e("cookie_135", para.body);
+        if(!TextUtils.isEmpty(para.body_manual)) {
+            getCoupon(cookie_134, para.body_manual, 134+"", para, para.num);
+            getCoupon(cookie_135, para.body_manual, 135+"", para, para.num);
+            getCoupon(cookie_159, para.body_manual, 159+"", para, para.num);
+        }
+        else if(!TextUtils.isEmpty(para.body_40)&&TextUtils.isEmpty(para.body_2)){
+            getCoupon(cookie_134, para.body_40, 134+"-40券", para, para.num);
+            getCoupon(cookie_135, para.body_40, 135+"-40券", para, para.num);
+            getCoupon(cookie_159, para.body_40, 159+"-40券", para, para.num);
+        }
+        else if(!TextUtils.isEmpty(para.body_2)&&TextUtils.isEmpty(para.body_40)){
+            getCoupon(cookie_134, para.body_2, 134+"-2券", para, para.num);
+            getCoupon(cookie_135, para.body_2, 135+"-2券", para, para.num);
+            getCoupon(cookie_159, para.body_2, 159+"-2券", para, para.num);
+        }
+        else if(!TextUtils.isEmpty(para.body_2)&&!TextUtils.isEmpty(para.body_40)){
+            getCoupon(cookie_134, para.body_40, 134+"-40券", para, para.num);
+            getCoupon(cookie_135, para.body_40, 135+"-40券", para, para.num);
+            getCoupon(cookie_159, para.body_40, 159+"-40券", para, para.num);
+            getCoupon(cookie_134, para.body_2, 134+"-2券", para, para.num);
+            getCoupon(cookie_135, para.body_2, 135+"-2券", para, para.num);
+            getCoupon(cookie_159, para.body_2, 159+"-2券", para, para.num);
+        }
         Toasty.success(getApplicationContext(), "后台抢券服务已开启！").show();
         Notification start = new Notification.Builder(getApplicationContext())
                 .setContentTitle("抢券服务")
@@ -86,7 +109,7 @@ public class GetCouponService extends Service {
     }
 
     //获取优惠券的具体请求代码
-    void getCoupon(final String cookie, final int num, final GetPara para,final int n) {
+    void getCoupon(final String cookie, final String body, final String num, final GetPara para, final int n) {
         new Thread() {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
@@ -104,7 +127,7 @@ public class GetCouponService extends Service {
                             .header("Cookie", cookie)
                             .userAgent(agent)
                             .method(Connection.Method.POST)
-                            .data("body", para.body)
+                            .data("body", body)
                             .data("client", "wh5")
                             .data("clientVersion", "1.0.0")
                             .data("sid", "")
@@ -133,13 +156,13 @@ public class GetCouponService extends Service {
                                 .setChannelId("Rowsen")
                                 .build();
                     }
-                    manager.notify(num, note);
+                    manager.notify(radom.nextInt(), note);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 if (n > 1) {
                     SystemClock.sleep(para.interval - 10);
-                    getCoupon(cookie, num, para,n-1);
+                    getCoupon(cookie,body, num, para,n-1);
                 }
             }
         }.start();
