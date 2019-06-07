@@ -30,7 +30,7 @@ public class MyWebViewClient extends WebViewClient {
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
         String url = request.getUrl().toString();
-        Log.e("should_url", url);
+        //Log.e("should_url", url);
         if (url.startsWith("http"))
             return false;
         else
@@ -39,16 +39,16 @@ public class MyWebViewClient extends WebViewClient {
 
     @Override
     public void onPageStarted(WebView view, String url, Bitmap favicon) {
-        Log.e("start_url", url);
+        //Log.e("start_url", url);
         super.onPageStarted(view, url, favicon);
     }
 
     @Override
     public void onPageFinished(WebView view, String url) {
-        Log.e("finish_url", url);
+        //Log.e("finish_url", url);
         if (url.equals("https://m.jd.com/")) {
             cookie = manager.getCookie(url);
-            Log.e("Cookie", cookie);
+            //Log.e("Cookie", cookie);
             view.loadUrl("https://home.m.jd.com/myJd/newhome.action?");
             Message msg = Message.obtain();
             if (cookie.contains("Rowsen-cool"))

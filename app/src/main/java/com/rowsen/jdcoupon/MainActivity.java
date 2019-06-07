@@ -21,14 +21,21 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 import es.dmoral.toasty.Toasty;
+
+import static android.view.View.GONE;
 
 public class MainActivity extends AppCompatActivity {
     WebView web;
@@ -60,11 +67,13 @@ public class MainActivity extends AppCompatActivity {
     LinearLayout get_url;
     Button auto;
     Button manual;
+    EditText dif_time;
     CheckBox coupon_40;
     CheckBox coupon_2;
     String body_40;
     String body_2;
     String body_manual;
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -98,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
                 switch (msg.what) {
                     case 0:
                         cookie_135 = (String) msg.obj;
-                        sid_135 = getSid(cookie_135);
+                        //sid_135 = getSid(cookie_135);
                         if (sp.edit().putString("cookie_135", cookie_135).commit()) {
                             b135.setText("135_Cookie(新获取)");
                             bGet.setEnabled(true);
@@ -106,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case 1:
                         cookie_159 = (String) msg.obj;
-                        sid_159 = getSid(cookie_159);
+                        //sid_159 = getSid(cookie_159);
                         if (sp.edit().putString("cookie_159", cookie_159).commit()) {
                             b159.setText("159_Cookie(新获取)");
                             bGet.setEnabled(true);
@@ -114,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case 2:
                         cookie_134 = (String) msg.obj;
-                        sid_134 = getSid(cookie_134);
+                        //sid_134 = getSid(cookie_134);
                         if (sp.edit().putString("cookie_134", cookie_134).commit()) {
                             b134.setText("134_Cookie(新获取)");
                             bGet.setEnabled(true);
@@ -147,22 +156,23 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case 5://获取到90-40券时
                         coupon_40 = new CheckBox(MainActivity.this);
-                        String[] temp = (msg.obj+"").split("\\|");
+                        String[] temp = (msg.obj + "").split("\\|");
                         coupon_40.setText(temp[0]);
-                        auto.setVisibility(View.GONE);
-                        manual.setVisibility(View.GONE);
+                        auto.setVisibility(GONE);
+                        manual.setVisibility(GONE);
                         get_url.addView(coupon_40);
                         body_40 = temp[1];
                         break;
                     case 6://获取到90-2券时
                         coupon_2 = new CheckBox(MainActivity.this);
-                        coupon_2.setText((msg.obj+"").split("\\|")[0]);
-                        auto.setVisibility(View.GONE);
-                        manual.setVisibility(View.GONE);
+                        coupon_2.setText((msg.obj + "").split("\\|")[0]);
+                        auto.setVisibility(GONE);
+                        manual.setVisibility(GONE);
                         get_url.addView(coupon_2);
-                        body_2 = (msg.obj+"").split("\\|")[1];
+                        body_2 = (msg.obj + "").split("\\|")[1];
                         break;
                     case 7://获取服务器coupon异常时
+                        Toasty.error(MainActivity.this, "服务器数据获取异常,请稍后尝试或使用手动!").show();
                         auto.setVisibility(View.VISIBLE);
                         auto.setEnabled(true);
                         manual.setVisibility(View.VISIBLE);
@@ -170,6 +180,9 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case 8://自动获取时没有勾选任何优惠券
                         Toasty.error(MainActivity.this, "请至少勾选一张优惠券!").show();
+                        break;
+                    case 9:
+                        dif_time.setText(msg.obj+"");
                         break;
                 }
             }
@@ -205,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
             if (s.contains("sid")) {
                 // if(s.split("=")[0].trim().equals("sid")) {
                 sid = s.split("=")[1];
-                Log.e("sid", sid);
+                //Log.e("sid", sid);
                 break;
                 //   }
             }
@@ -221,7 +234,7 @@ public class MainActivity extends AppCompatActivity {
         final RadioGroup time = v.findViewById(R.id.group_time);
         final RadioGroup interval = v.findViewById(R.id.group_interval);
         final RadioGroup num = v.findViewById(R.id.group_num);
-        final EditText dif_time = v.findViewById(R.id.dif_time);
+        dif_time = v.findViewById(R.id.dif_time);
         final EditText url = v.findViewById(R.id.url);
         get_url = v.findViewById(R.id.get_url);
         auto = v.findViewById(R.id.auto);
@@ -231,37 +244,80 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 auto.setEnabled(false);
                 manual.setEnabled(false);
-                new Thread(){
+                //获取本地时间与JD时间差
+                new Thread() {
+                    @Override
+                    public void run() {
+                        super.run();
+                        Connection.Response response = null;
+                        try {
+                            response = Jsoup.connect("https://m.jd.com/").timeout(5000).execute();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        Calendar calendar = Calendar.getInstance();
+                        long local_time = calendar.getTimeInMillis();
+                        Date dd = null; //将字符串改为date的格式
+                        try {
+                            dd = new SimpleDateFormat("EEE,dd MMM yyyy HH:mm:ss 'GMT'", Locale.ENGLISH).parse(response.headers().get("Date"));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        calendar.setTime(dd);
+                        calendar.add(Calendar.HOUR_OF_DAY, 8);
+                        String sent_time = response.headers().get("X-Android-Sent-Millis");
+                        String received_time = response.headers().get("X-Android-Received-Millis");
+                        /*Log.e("header", response.headers().toString());
+                        Log.e("SERVER_TIME_RAW", dd.getTime() + "");
+                        Log.e("SERVER_TIME", calendar.getTimeInMillis() + "");
+                        Log.e("sent_millis", sent_time);
+                        Log.e("received_millis", received_time);*/
+                        String dif_time = calendar.getTimeInMillis() + Long.parseLong(received_time) - Long.parseLong(sent_time) - local_time + "";
+                        Message msg = Message.obtain();
+                        msg.what = 9;
+                        msg.obj = dif_time;
+                        handler.sendMessage(msg);
+                    }
+                }.start();
+                //获取券地址
+                new Thread() {
                     @Override
                     public void run() {
                         super.run();
                         Document doc;
                         try {
-                            doc = Jsoup.connect("http://freenat.club:50968").get();
+                            doc = Jsoup.connect("http://free.idcfengye.com:10172").timeout(5000).get();
+                            //Log.e("response", doc.body().toString());
                             Elements div_40 = doc.getElementsByClass("90-40");
-                            if(div_40.size()>0){
+                            if (div_40.size() > 0) {
                                 Message msg_40 = Message.obtain();
                                 msg_40.what = 5;
                                 msg_40.obj = div_40.get(0).text();
-                               // Log.e("90-40", msg_40.obj+"");
+                                // Log.e("90-40", msg_40.obj+"");
                                 handler.sendMessage(msg_40);
                             }
                             Elements div_2 = doc.getElementsByClass("90-2");
-                            if(div_2.size()>0){
+                            if (div_2.size() > 0) {
                                 Message msg_2 = Message.obtain();
                                 msg_2.what = 6;
                                 msg_2.obj = div_2.get(0).text();
-                               // Log.e("90-2", msg_2.obj+"");
+                                // Log.e("90-2", msg_2.obj+"");
                                 handler.sendMessage(msg_2);
                             }
                         } catch (IOException e) {
                             e.printStackTrace();
                             handler.sendEmptyMessage(7);
                         }
-
-
                     }
                 }.start();
+            }
+        });
+        manual.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                auto.setVisibility(GONE);
+                manual.setVisibility(GONE);
+                url.setVisibility(View.VISIBLE);
             }
         });
         builder.setView(v);
@@ -317,17 +373,16 @@ public class MainActivity extends AppCompatActivity {
                         para_num = 3;
                         break;
                 }
-                if (!TextUtils.isEmpty(url.getText().toString().trim())){
+                if (!TextUtils.isEmpty(url.getText().toString().trim())) {
                     body_manual = url.getText().toString().trim();
-                    para = new GetPara(para_time, para_interval, para_num, para_dif, body_manual,null,null);
-                }
-                else if(coupon_40.isChecked()&&!TextUtils.isEmpty(body_40)&&!coupon_2.isChecked())
-                    para = new GetPara(para_time, para_interval, para_num, para_dif, null,body_40,null);
-                else if(coupon_40.isChecked()&&!TextUtils.isEmpty(body_40)&&coupon_2.isChecked()&&!TextUtils.isEmpty(body_2))
-                    para = new GetPara(para_time, para_interval, para_num, para_dif, null,body_40,body_2);
-                else if(coupon_2.isChecked()&&!TextUtils.isEmpty(body_2)&&!coupon_40.isChecked())
-                    para = new GetPara(para_time, para_interval, para_num, para_dif, null,null,body_2);
-                else if(!coupon_2.isChecked()&&!coupon_40.isChecked())
+                    para = new GetPara(para_time, para_interval, para_num, para_dif, body_manual, null, null);
+                } else if (coupon_40.isChecked() && !TextUtils.isEmpty(body_40) && !coupon_2.isChecked())
+                    para = new GetPara(para_time, para_interval, para_num, para_dif, null, body_40, null);
+                else if (coupon_40.isChecked() && !TextUtils.isEmpty(body_40) && coupon_2.isChecked() && !TextUtils.isEmpty(body_2))
+                    para = new GetPara(para_time, para_interval, para_num, para_dif, null, body_40, body_2);
+                else if (coupon_2.isChecked() && !TextUtils.isEmpty(body_2) && !coupon_40.isChecked())
+                    para = new GetPara(para_time, para_interval, para_num, para_dif, null, null, body_2);
+                else if (!coupon_2.isChecked() && !coupon_40.isChecked())
                     handler.sendEmptyMessage(8);
 
                 Intent intent = new Intent(MainActivity.this, GetCouponService.class);

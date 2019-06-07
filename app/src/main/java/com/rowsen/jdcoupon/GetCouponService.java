@@ -58,7 +58,7 @@ public class GetCouponService extends Service {
             e.printStackTrace();
         }
         radom = new Random();
-        Log.e("service", "开启");
+       //Log.e("service", "开启");
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -134,7 +134,7 @@ public class GetCouponService extends Service {
                             .data("uuid", "")//1530348927005997475156
                             .data("area", "")
                             .execute();
-                    Log.e("response", response.body());
+                    //Log.e("response", response.body());
                     String s = response.body();
                     s = s.split(":\\\"")[1];
                     if (s.contains("领取成功")) {
